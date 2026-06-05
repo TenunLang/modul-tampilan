@@ -1,0 +1,10 @@
+{
+  "nama": "tampilan",
+  "versi": "0.1.0",
+  "deskripsi": "Render view/template HTML untuk Tenun (placeholder {{kunci}} + escape XSS).",
+  "lisensi": "MIT",
+  "penulis": "TenunLang",
+  "berkas": "src/tampilan.tenun",
+  "kataKunci": ["view", "template", "html", "render", "web"],
+  "butuh": {}
+}

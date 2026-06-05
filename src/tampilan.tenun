@@ -1,0 +1,28 @@
+// Modul Tampilan (view/template) untuk Tenun.
+// Render HTML: ganti placeholder {{kunci}} dengan nilai (otomatis di-escape XSS).
+// Dibangun di atas builtin inti: bacaFile, ganti.
+
+// Baca berkas template.
+fungsi tampilan(berkas: teks): teks {
+    kembali bacaFile(berkas);
+}
+
+// Escape karakter HTML (cegah XSS). '&' harus diganti pertama.
+fungsi tampilan_escape(s: teks): teks {
+    biar r: teks = ganti(s, "&", "&amp;");
+    r = ganti(r, "<", "&lt;");
+    r = ganti(r, ">", "&gt;");
+    r = ganti(r, "\"", "&quot;");
+    r = ganti(r, "'", "&#39;");
+    kembali r;
+}
+
+// Isi placeholder {{kunci}} dengan nilai (di-escape HTML). Bisa dirantai.
+fungsi isi(tmpl: teks, kunci: teks, nilai: teks): teks {
+    kembali ganti(tmpl, "{{" + kunci + "}}", tampilan_escape(nilai));
+}
+
+// Isi placeholder tanpa escape — untuk HTML yang sudah terpercaya.
+fungsi isi_mentah(tmpl: teks, kunci: teks, nilai: teks): teks {
+    kembali ganti(tmpl, "{{" + kunci + "}}", nilai);
+}

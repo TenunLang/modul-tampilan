@@ -1,0 +1,6 @@
+impor "tampilan";
+
+biar t: teks = "<h1>Halo {{nama}}</h1><p>Umur {{umur}}</p>";
+t = isi(t, "nama", "<b>Budi</b>");   // di-escape otomatis
+t = isi(t, "umur", "20");
+cetak(t);
