@@ -1,10 +1,10 @@
 {
   "nama": "tampilan",
   "versi": "0.1.0",
-  "deskripsi": "Render view/template HTML untuk Tenun (placeholder {{kunci}} + escape XSS).",
+  "deskripsi": "Batik — template engine teks (.batik) untuk Tenun: substitusi, seksi kondisional, loop, layout.",
   "lisensi": "MIT",
   "penulis": "TenunLang",
   "berkas": "src/tampilan.tenun",
-  "kataKunci": ["view", "template", "html", "render", "web"],
+  "kataKunci": ["batik", "view", "template", "render", "web", "tampilan"],
   "butuh": {}
 }

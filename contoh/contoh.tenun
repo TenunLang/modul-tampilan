@@ -1,6 +1,22 @@
 impor "tampilan";
 
-biar t: teks = "<h1>Halo {{nama}}</h1><p>Umur {{umur}}</p>";
-t = isi(t, "nama", "<b>Budi</b>");   // di-escape otomatis
-t = isi(t, "umur", "20");
-cetak(t);
+// Substitusi + seksi kondisional + komentar.
+biar tmpl: teks = "Halo {{nama}}!{{! sapaan }} {{#jika admin}}[ADMIN]{{/jika admin}}{{#kecuali admin}}[user]{{/kecuali admin}}";
+cetak(tampilan_render(tmpl, peta{ "nama": "Taqin", "admin": "1" }));
+cetak(tampilan_render(tmpl, peta{ "nama": "Budi", "admin": "" }));
+
+// Loop daftar baris.
+biar item: teks = "- {{judul}} (Rp{{harga}})\n";
+biar daftar: []peta = [
+    peta{ "judul": "Kopi", "harga": "20000" },
+    peta{ "judul": "Teh", "harga": "10000" }
+];
+cetak(tampilan_daftar(item, daftar));
+
+// Layout + escape (untuk keluaran HTML).
+biar layout: teks = "<main>{{konten}}</main>";
+biar konten: teks = tampilan_render_aman("Komentar: {{teks}}", peta{ "teks": "<b>hai</b>" });
+cetak(tampilan_tata(layout, konten));
+
+// Render dari berkas .batik.
+cetak(batik("contoh/halaman.batik", peta{ "nama": "Sri", "pesan": "Selamat datang", "masuk": "1" }));

@@ -1,0 +1,4 @@
+<h1>Halo {{nama}}</h1>
+{{#jika pesan}}<p>{{pesan}}</p>{{/jika pesan}}
+{{#kecuali masuk}}<a href="/masuk">Silakan masuk</a>{{/kecuali masuk}}
+{{! catatan: blok ini dibuang saat render }}

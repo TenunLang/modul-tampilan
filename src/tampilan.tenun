@@ -1,13 +1,31 @@
-// Modul Tampilan (view/template) untuk Tenun.
-// Render HTML: ganti placeholder {{kunci}} dengan nilai (otomatis di-escape XSS).
-// Dibangun di atas builtin inti: bacaFile, ganti.
+// Modul Tampilan — Batik, template engine teks generik untuk Tenun.
+// Format berkas: ".batik". Bukan khusus HTML: bisa untuk email, config, codegen,
+// atau view web. Data berupa `peta` (teks->teks).
+//
+// Sintaks:
+//   {{kunci}}                  substitusi nilai (apa adanya)
+//   {{#jika kunci}}..{{/jika}} tampil bila kunci "truthy"
+//   {{#kecuali k}}..{{/kecuali}} tampil bila kunci "falsy"
+//   {{! komentar }}            dibuang
+// Loop daftar baris: tampilan_daftar. Layout: tampilan_tata.
+// Dibangun di atas builtin: bacaFile, ganti, cari, potong, panjangTeks, petaKunci.
 
-// Baca berkas template.
-fungsi tampilan(berkas: teks): teks {
-    kembali bacaFile(berkas);
+// ---- Bantu ----
+
+fungsi tampilan_sisa(s: teks, mulai: bulat): teks {
+    kembali potong(s, mulai, panjangTeks(s) - mulai);
 }
 
-// Escape karakter HTML (cegah XSS). '&' harus diganti pertama.
+// Nilai dianggap "truthy" bila bukan kosong/0/salah/false.
+fungsi tampilan_truthy(v: teks): bool {
+    kalau panjangTeks(v) == 0 { kembali salah; }
+    kalau v == "0" { kembali salah; }
+    kalau v == "salah" { kembali salah; }
+    kalau v == "false" { kembali salah; }
+    kembali benar;
+}
+
+// Escape HTML — opsional, dipakai hanya bila keluaran memang HTML.
 fungsi tampilan_escape(s: teks): teks {
     biar r: teks = ganti(s, "&", "&amp;");
     r = ganti(r, "<", "&lt;");
@@ -17,12 +35,129 @@ fungsi tampilan_escape(s: teks): teks {
     kembali r;
 }
 
-// Isi placeholder {{kunci}} dengan nilai (di-escape HTML). Bisa dirantai.
+// ---- Pemroses blok ----
+
+// Ganti tiap blok openTag..closeTag: simpan isinya bila `simpan`, selain itu buang.
+// Tidak menangani blok bersarang berkunci sama.
+fungsi tampilan_blok(tmpl: teks, openTag: teks, closeTag: teks, simpan: bool): teks {
+    biar p: bulat = cari(tmpl, openTag);
+    selama p >= 0 {
+        biar isiMulai: bulat = p + panjangTeks(openTag);
+        biar sisa: teks = tampilan_sisa(tmpl, isiMulai);
+        biar q: bulat = cari(sisa, closeTag);
+        kalau q < 0 {
+            kembali tmpl;
+        }
+        biar isi: teks = potong(sisa, 0, q);
+        biar sebelum: teks = potong(tmpl, 0, p);
+        biar sesudah: teks = tampilan_sisa(sisa, q + panjangTeks(closeTag));
+        biar ganti: teks = "";
+        kalau simpan {
+            ganti = isi;
+        }
+        tmpl = sebelum + ganti + sesudah;
+        p = cari(tmpl, openTag);
+    }
+    kembali tmpl;
+}
+
+fungsi tampilan_komentar(tmpl: teks): teks {
+    kembali tampilan_blok(tmpl, "{{!", "}}", salah);
+}
+
+// Buang placeholder {{...}} sisa (kunci tak dikenal) -> "".
+fungsi tampilan_bersih(tmpl: teks): teks {
+    biar p: bulat = cari(tmpl, "{{");
+    selama p >= 0 {
+        biar sisa: teks = tampilan_sisa(tmpl, p + 2);
+        biar q: bulat = cari(sisa, "}}");
+        kalau q < 0 {
+            kembali tmpl;
+        }
+        tmpl = potong(tmpl, 0, p) + tampilan_sisa(sisa, q + 2);
+        p = cari(tmpl, "{{");
+    }
+    kembali tmpl;
+}
+
+// ---- Render ----
+
+// Render template dengan data. Urutan: komentar -> seksi -> substitusi -> bersih.
+fungsi tampilan_render(tmpl: teks, data: peta): teks {
+    biar hasil: teks = tampilan_komentar(tmpl);
+    biar kunci: []teks = petaKunci(data);
+
+    untuk i dari 0 sampai panjang(kunci) {
+        biar k: teks = kunci[i];
+        biar truthy: bool = tampilan_truthy(data[k]);
+        hasil = tampilan_blok(hasil, "{{#jika " + k + "}}", "{{/jika " + k + "}}", truthy);
+        hasil = tampilan_blok(hasil, "{{#kecuali " + k + "}}", "{{/kecuali " + k + "}}", truthy == salah);
+    }
+
+    untuk j dari 0 sampai panjang(kunci) {
+        biar k2: teks = kunci[j];
+        hasil = ganti(hasil, "{{" + k2 + "}}", data[k2]);
+    }
+
+    kembali tampilan_bersih(hasil);
+}
+
+// Render dengan nilai di-escape HTML (untuk keluaran HTML).
+fungsi tampilan_render_aman(tmpl: teks, data: peta): teks {
+    biar aman: peta = peta{};
+    biar kunci: []teks = petaKunci(data);
+    untuk i dari 0 sampai panjang(kunci) {
+        aman[kunci[i]] = tampilan_escape(data[kunci[i]]);
+    }
+    kembali tampilan_render(tmpl, aman);
+}
+
+// Render dari berkas template (ekstensi apa pun).
+fungsi tampilan_render_berkas(berkas: teks, data: peta): teks {
+    kembali tampilan_render(bacaFile(berkas), data);
+}
+
+// Loop: itemTmpl diisi untuk tiap peta, hasil digabung.
+fungsi tampilan_daftar(itemTmpl: teks, daftar: []peta): teks {
+    biar keluar: teks = "";
+    untuk i dari 0 sampai panjang(daftar) {
+        keluar = keluar + tampilan_render(itemTmpl, daftar[i]);
+    }
+    kembali keluar;
+}
+
+// Sisipkan konten ke layout pada penanda {{konten}}.
+fungsi tampilan_tata(layout: teks, konten: teks): teks {
+    kembali ganti(layout, "{{konten}}", konten);
+}
+
+// ---- Batik: alias ringkas (template engine ".batik") ----
+
+// Render berkas template .batik dengan data.
+fungsi batik(berkas: teks, data: peta): teks {
+    kembali tampilan_render_berkas(berkas, data);
+}
+
+// Render string template .batik dengan data.
+fungsi batik_render(tmpl: teks, data: peta): teks {
+    kembali tampilan_render(tmpl, data);
+}
+
+// Render daftar baris dengan template item .batik.
+fungsi batik_daftar(itemTmpl: teks, daftar: []peta): teks {
+    kembali tampilan_daftar(itemTmpl, daftar);
+}
+
+// ---- API lama (kompatibel) ----
+
+fungsi tampilan(berkas: teks): teks {
+    kembali bacaFile(berkas);
+}
+
 fungsi isi(tmpl: teks, kunci: teks, nilai: teks): teks {
     kembali ganti(tmpl, "{{" + kunci + "}}", tampilan_escape(nilai));
 }
 
-// Isi placeholder tanpa escape — untuk HTML yang sudah terpercaya.
 fungsi isi_mentah(tmpl: teks, kunci: teks, nilai: teks): teks {
     kembali ganti(tmpl, "{{" + kunci + "}}", nilai);
 }
