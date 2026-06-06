@@ -12,8 +12,48 @@
 
 // ---- Bantu ----
 
+// Folder dasar untuk mencari berkas partial ({{> nama}}). Diatur otomatis
+// saat merender dari berkas (ke folder berkas tersebut).
+biar tampilan_basis: teks = ".";
+
+fungsi tampilan_atur_basis(dir: teks): kosong {
+    tampilan_basis = dir;
+}
+
 fungsi tampilan_sisa(s: teks, mulai: bulat): teks {
     kembali potong(s, mulai, panjangTeks(s) - mulai);
+}
+
+// Folder dari sebuah path ("." bila tanpa folder).
+fungsi tampilan_dirname(p: teks): teks {
+    biar idx: bulat = 0 - 1;
+    biar i: bulat = 0;
+    selama i < panjangTeks(p) {
+        kalau potong(p, i, 1) == "/" { idx = i; }
+        i = i + 1;
+    }
+    kalau idx < 0 { kembali "."; }
+    kembali potong(p, 0, idx);
+}
+
+// Sisipkan partial: {{> nama}} -> isi berkas <basis>/<nama>.batik (rekursif).
+fungsi tampilan_sertakan(tmpl: teks): teks {
+    biar lindung: bulat = 0;
+    biar p: bulat = cari(tmpl, "{{>");
+    selama p >= 0 {
+        kalau lindung > 200 { kembali tmpl; }
+        lindung = lindung + 1;
+        biar sisa: teks = tampilan_sisa(tmpl, p + 3);
+        biar q: bulat = cari(sisa, "}}");
+        kalau q < 0 { kembali tmpl; }
+        biar nama: teks = pangkas(potong(sisa, 0, q));
+        biar berkas: teks = tampilan_basis + "/" + nama + ".batik";
+        biar konten: teks = "";
+        kalau adaFile(berkas) { konten = bacaFile(berkas); }
+        tmpl = potong(tmpl, 0, p) + konten + tampilan_sisa(sisa, q + 2);
+        p = cari(tmpl, "{{>");
+    }
+    kembali tmpl;
 }
 
 // Nilai dianggap "truthy" bila bukan kosong/0/salah/false.
@@ -84,7 +124,8 @@ fungsi tampilan_bersih(tmpl: teks): teks {
 
 // Render template dengan data. Urutan: komentar -> seksi -> substitusi -> bersih.
 fungsi tampilan_render(tmpl: teks, data: peta): teks {
-    biar hasil: teks = tampilan_komentar(tmpl);
+    biar hasil: teks = tampilan_sertakan(tmpl);
+    hasil = tampilan_komentar(hasil);
     biar kunci: []teks = petaKunci(data);
 
     untuk i dari 0 sampai panjang(kunci) {
@@ -112,8 +153,9 @@ fungsi tampilan_render_aman(tmpl: teks, data: peta): teks {
     kembali tampilan_render(tmpl, aman);
 }
 
-// Render dari berkas template (ekstensi apa pun).
+// Render dari berkas template (ekstensi apa pun). Partial dicari relatif folder berkas.
 fungsi tampilan_render_berkas(berkas: teks, data: peta): teks {
+    tampilan_basis = tampilan_dirname(berkas);
     kembali tampilan_render(bacaFile(berkas), data);
 }
 

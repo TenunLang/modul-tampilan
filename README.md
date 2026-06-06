@@ -14,8 +14,11 @@ tenun add tampilan
 {{kunci}}                          substitusi nilai
 {{#jika kunci}}...{{/jika kunci}}  tampil bila kunci "truthy"
 {{#kecuali k}}...{{/kecuali k}}    tampil bila kunci "falsy"
+{{> nama}}                         sertakan partial <basis>/nama.batik
 {{! komentar }}                    dibuang saat render
 ```
+
+Partial (`{{> nama}}`) menyisipkan isi berkas lain (mis. header/footer) dan dirender rekursif dengan data yang sama. Folder dasar = folder berkas template (otomatis saat `batik("views/x.batik", ...)`); atur manual dengan `tampilan_atur_basis(dir)`. Contoh: `{{> partials/header}}`.
 
 "Truthy" = bukan `""`, `"0"`, `"salah"`, `"false"`. Penutup seksi menyertakan nama kunci (`{{/jika nama}}`) agar seksi berbeda bisa bersarang.
 

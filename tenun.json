@@ -1,7 +1,7 @@
 {
   "nama": "tampilan",
-  "versi": "0.1.0",
-  "deskripsi": "Batik — template engine teks (.batik) untuk Tenun: substitusi, seksi kondisional, loop, layout.",
+  "versi": "0.2.0",
+  "deskripsi": "Batik — template engine teks (.batik) untuk Tenun: substitusi, seksi kondisional, loop, layout, partial/include.",
   "lisensi": "MIT",
   "penulis": "TenunLang",
   "berkas": "src/tampilan.tenun",
