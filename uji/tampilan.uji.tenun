@@ -1,0 +1,7 @@
+impor "../src/tampilan.tenun";
+
+tegasSama(tampilan_escape("<b>"), "&lt;b&gt;", "escape tag");
+tegasSama(tampilan_escape("a&b"), "a&amp;b", "escape ampersand");
+tegas(tampilan_truthy("benar"), "benar truthy");
+tegas(!tampilan_truthy(""), "kosong tak truthy");
+tegas(!tampilan_truthy("0"), "nol tak truthy");
